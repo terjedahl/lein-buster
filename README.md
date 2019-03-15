@@ -11,7 +11,7 @@ bundled as part of an uberjar alongside other clojure code in mind.
 Once run, `lein-buster` will output two types of artifacts:
 
 1. A fingerprinted version of your specified files in the format of
-   `<filename>-<fingerprint>.<extension>`.
+   `<output-base>/<filepath-diff-minus-filename>/<filename>-<fingerprint>.<extension>`.
 2. A manifest file in `JSON` format so that you can map the filename you know to
    the generated one.
 
@@ -22,8 +22,30 @@ manifest to. You can supply this configuration inside a `:buster` map like so:
 
 
 ```clojure
-:buster {:files ["resources/public/scripts/awesome.js"]
-         :manifest "resources/manifest.json"}
+  :buster {;; A vector of files and dirs as strings or as regex patterns.
+           ;; If any regex, then all file paths in project are listed once, and any regex is matched against the loaded list.
+           ;; If any string or regex matches a directory then all files in that directory are "busted"
+           :files ["resources/build/out/main.js"
+                   "no-existent-file.txt"
+                   "resources/build/images"
+                   #"resources/build/stylesheets/.+\.css$"]
+
+           ;; This part will be stripped away from the file path, and the remainder - lets call it "filepath-diff" -
+           ;; is used in both manifest as well as appended to <output-base> when writing renamed files.
+           ;; Defaults to <project-dir>.
+           :files-base "resources/build"
+           
+           ;; Renamed files are written to <output-base>/<filepath-diff>.
+           ;; Defaults <source-base>.
+           :output-base "release"
+           
+           ;; Defaults to <output-base>/rev-manifest.json
+           :manifest "release/rev-manifest.json"
+           
+           ;; If true, merges updated/new files to existing manifest file.
+           ;; If false, replaces an existing manifest with an new file.
+           ;; Defaults to false.
+           :merge true}
 ```
 
 If you're not feeling picky, you can stick that configuration at the
@@ -47,7 +69,7 @@ sure that hook comes before buster's:
 
 ## Usage
 
-Add `[lein-buster "0.1.0"]` to the `:plugins` vector of your `project.clj`.
+Add `[no.terjedahl/lein-buster "0.2.0-SNAPSHOT"]` to the `:plugins` vector of your `project.clj`.
 
 You can invoke `lein-buster` manually from your project like so:
 
@@ -106,7 +128,7 @@ approach, please add how you're integrating `lein-buster` to the wiki!
 
 ## License
 
-Copyright © 2016 Stephen Caudill
+Copyright © 2016-2019 Stephen Caudill, Terje Dahl
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
